@@ -2,7 +2,7 @@
 /**
  * Plugin Name: RJ WooCommerce India Post Tracking
  * Description: Adds tracking number input field and custom processing button for Indian Post Courier
- * Version: 2.1
+ * Version: 2.2
  * Author: Burhan Hasanfatta
  * Text Domain: rj-woo-indiapost-tracking
  * Domain Path: /languages
@@ -243,7 +243,7 @@ class RJ_WooCommerce_IndiaPost_Tracking {
      */
     public function display_tracking_qr_code($order) {
         $T_number = get_post_meta($order->get_id(), '_rj_indiapost_tracking_number', true);
-        $tracking_number = 'https://www.aftership.com/track?t='.$T_number.'&c=india-post';
+        $tracking_number = 'https://m.aftership.com/india-post/'.$T_number;
         
         if (!empty($T_number)) {
             ?>

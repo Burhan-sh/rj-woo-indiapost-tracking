@@ -117,7 +117,7 @@ class RJ_IndiaPost_Frontend_Display {
         $tracking_number = get_post_meta($order->get_id(), '_rj_indiapost_tracking_number', true);
         
         if (!empty($tracking_number)) {
-            $tracking_url = 'https://www.aftership.com/track?t=' . $tracking_number . '&c=india-post';
+            $tracking_url = 'https://m.aftership.com/india-post/' . $tracking_number;
             ?>
             <div class="rj-tracking-info">
                 <div class="rj-tracking-qr-code" data-tracking-url="<?php echo esc_attr($tracking_url); ?>"></div>

@@ -63,24 +63,24 @@ class RJ_IndiaPost_Orders_List {
      * @param string $column Column name
      * @param int $order_id Order ID
      */
-    public function add_order_tracking_column_content($column, $order_id) {
+    public function add_order_tracking_column_content($column, $order) {
         if ($column === 'order_tracking') {
             // Get existing tracking number if any
-            $tracking_number = get_post_meta($order_id, '_rj_indiapost_tracking_number', true);
+            $order_value_id = $order->get_id();
+            $tracking_number = get_post_meta($order_value_id, '_rj_indiapost_tracking_number', true);
             
             if (!empty($tracking_number)) {
                 // Display tracking number
-                echo '<div class="rj-list-tracking-info" id="rj-tracking-info-' . esc_attr($order_id) . '">';
+                echo '<div class="rj-list-tracking-info" id="rj-tracking-info-' . esc_attr($order_value_id) . '">';
                 echo '<div class="rj-list-tracking-number">' . esc_html($tracking_number) . '</div>';
-                echo '<a href="#" class="rj-list-edit-tracking" data-order-id="' . esc_attr($order_id) . '">Edit</a>';
                 echo '</div>';
             }
             
             // Display input field and button (hidden if tracking number exists)
-            echo '<div class="rj-list-tracking-input" id="rj-tracking-input-' . esc_attr($order_id) . '"' . (!empty($tracking_number) ? ' style="display:none;"' : '') . '>';
-            echo '<input type="text" class="rj-list-tracking-number-input" id="rj-tracking-number-' . esc_attr($order_id) . '" value="' . esc_attr($tracking_number) . '" placeholder="' . esc_attr__('Enter tracking #', 'rj-woo-indiapost-tracking') . '">';
-            echo '<button type="button" class="button rj-list-add-tracking" data-order-id="' . esc_attr($order_id) . '">' . esc_html__('Add', 'rj-woo-indiapost-tracking') . '</button>';
-            echo '<div class="rj-list-message" id="rj-tracking-message-' . esc_attr($order_id) . '"></div>';
+            echo '<div class="rj-list-tracking-input" id="rj-tracking-input-' . esc_attr($order_value_id) . '"' . (!empty($tracking_number) ? ' style="display:none;"' : '') . '>';
+            echo '<input type="text" class="rj-list-tracking-number-input" id="rj-tracking-number-' . esc_attr($order_value_id) . '" value="' . esc_attr($tracking_number) . '" placeholder="' . esc_attr__('Enter tracking #', 'rj-woo-indiapost-tracking') . '">';
+            echo '<button type="button" class="button rj-list-add-tracking" data-order-id="' . esc_attr($order_value_id) . '">' . esc_html__('Add', 'rj-woo-indiapost-tracking') . '</button>';
+            echo '<div class="rj-list-message" id="rj-tracking-message-' . esc_attr($order_value_id) . '"></div>';
             echo '</div>';
         }
     }
@@ -108,7 +108,7 @@ class RJ_IndiaPost_Orders_List {
                 'rj-indiapost-list-script',
                 plugin_dir_url(__FILE__) . 'js/orders-list-script.js',
                 array('jquery'),
-                '1.0.0',
+                '1.0.1',
                 true
             );
             
@@ -144,7 +144,7 @@ class RJ_IndiaPost_Orders_List {
         // Get and sanitize data
         $order_id = isset($_POST['order_id']) ? absint($_POST['order_id']) : 0;
         $tracking_number = isset($_POST['tracking_number']) ? sanitize_text_field($_POST['tracking_number']) : '';
-        
+
         if (empty($order_id)) {
             wp_send_json_error(array('message' => __('Invalid order ID.', 'rj-woo-indiapost-tracking')));
             return;

@@ -47,10 +47,9 @@ jQuery(document).ready(function($) {
                         trackingInfoContainer.find('.rj-list-tracking-number').text(response.data.tracking_number);
                     } else {
                         // Create new tracking info container if it doesn't exist
+
                         var newTrackingInfo = '<div class="rj-list-tracking-info" id="rj-tracking-info-' + orderId + '">' +
-                            '<div class="rj-list-tracking-number">' + response.data.tracking_number + '</div>' +
-                            '<a href="#" class="rj-list-edit-tracking" data-order-id="' + orderId + '">Edit</a>' +
-                            '</div>';
+                            '<div class="rj-list-tracking-number">' + response.data.tracking_number + '</div>';
                         
                         // Insert before the input container
                         $('#rj-tracking-input-' + orderId).before(newTrackingInfo);
@@ -90,6 +89,9 @@ jQuery(document).ready(function($) {
         });
     });
     
+    $(document).on("click", ".rj-list-tracking-number-input", function (e) {
+        e.stopPropagation();
+    });
     // Handle click on "Edit" link
     $(document).on('click', '.rj-list-edit-tracking', function(e) {
         e.preventDefault();
