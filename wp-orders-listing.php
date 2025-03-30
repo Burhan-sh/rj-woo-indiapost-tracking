@@ -17,13 +17,13 @@ class RJ_IndiaPost_Orders_List {
      * Constructor
      */
     public function __construct() {
-        // Add custom column to WooCommerce orders table
+        // Add custom column to WooCommerce orders table (both traditional and HPOS)
         add_filter('manage_edit-shop_order_columns', array($this, 'add_order_tracking_column'), 20);
-        add_filter('manage_woocommerce_page_wc-orders_columns', array($this, 'add_order_tracking_column'), 20);
+        add_filter('woocommerce_admin_order_list_table_columns', array($this, 'add_order_tracking_column'), 20);
         
         // Add content to custom column
         add_action('manage_shop_order_posts_custom_column', array($this, 'add_order_tracking_column_content'), 20, 2);
-        add_action('manage_woocommerce_page_wc-orders_custom_column', array($this, 'add_order_tracking_column_content'), 20, 2);
+        add_action('woocommerce_admin_order_list_table_column_tracking', array($this, 'add_hpos_tracking_column_content'), 20);
         
         // Enqueue scripts and styles for admin
         add_action('admin_enqueue_scripts', array($this, 'enqueue_admin_list_scripts'));
@@ -39,50 +39,88 @@ class RJ_IndiaPost_Orders_List {
      * @return array Modified columns
      */
     public function add_order_tracking_column($columns) {
+        // Debug output
+        echo '<!-- RJ_IndiaPost columns before: ' . implode(',', array_keys($columns)) . ' -->';
+        
         $new_columns = array();
         
-        // Insert tracking column before actions column or at the end if actions doesn't exist
+        // Insert tracking column before actions column or at a specific position
         foreach ($columns as $key => $name) {
             if ($key === 'order_actions' || $key === 'wc_actions') {
-                $new_columns['order_tracking'] = __('Tracking', 'rj-woo-indiapost-tracking');
+                $new_columns['tracking'] = __('Tracking', 'rj-woo-indiapost-tracking');
             }
             $new_columns[$key] = $name;
         }
         
-        // If actions column doesn't exist, add it at the end
-        if (!isset($new_columns['order_tracking'])) {
-            $new_columns['order_tracking'] = __('Tracking', 'rj-woo-indiapost-tracking');
+        // If actions column doesn't exist, add it before the last column
+        if (!isset($new_columns['tracking'])) {
+            $last_key = array_key_last($columns);
+            
+            foreach ($columns as $key => $name) {
+                if ($key === $last_key) {
+                    $new_columns['tracking'] = __('Tracking', 'rj-woo-indiapost-tracking');
+                }
+                $new_columns[$key] = $name;
+            }
         }
+        
+        // If still not added, add it at the end
+        if (!isset($new_columns['tracking'])) {
+            $new_columns['tracking'] = __('Tracking', 'rj-woo-indiapost-tracking');
+        }
+        
+        // Debug output
+        echo '<!-- RJ_IndiaPost columns after: ' . implode(',', array_keys($new_columns)) . ' -->';
         
         return $new_columns;
     }
     
     /**
-     * Add content to tracking column
+     * Add content to tracking column for traditional orders
      *
      * @param string $column Column name
      * @param int $order_id Order ID
      */
     public function add_order_tracking_column_content($column, $order_id) {
-        if ($column === 'order_tracking') {
-            // Get existing tracking number if any
-            $tracking_number = get_post_meta($order_id, '_rj_indiapost_tracking_number', true);
-            
-            if (!empty($tracking_number)) {
-                // Display tracking number
-                echo '<div class="rj-list-tracking-info" id="rj-tracking-info-' . esc_attr($order_id) . '">';
-                echo '<div class="rj-list-tracking-number">' . esc_html($tracking_number) . '</div>';
-                echo '<a href="#" class="rj-list-edit-tracking" data-order-id="' . esc_attr($order_id) . '">Edit</a>';
-                echo '</div>';
-            }
-            
-            // Display input field and button (hidden if tracking number exists)
-            echo '<div class="rj-list-tracking-input" id="rj-tracking-input-' . esc_attr($order_id) . '"' . (!empty($tracking_number) ? ' style="display:none;"' : '') . '>';
-            echo '<input type="text" class="rj-list-tracking-number-input" id="rj-tracking-number-' . esc_attr($order_id) . '" value="' . esc_attr($tracking_number) . '" placeholder="' . esc_attr__('Enter tracking #', 'rj-woo-indiapost-tracking') . '">';
-            echo '<button type="button" class="button rj-list-add-tracking" data-order-id="' . esc_attr($order_id) . '">' . esc_html__('Add', 'rj-woo-indiapost-tracking') . '</button>';
-            echo '<div class="rj-list-message" id="rj-tracking-message-' . esc_attr($order_id) . '"></div>';
+        if ($column === 'tracking') {
+            $this->render_tracking_field($order_id);
+        }
+    }
+    
+    /**
+     * Add content to tracking column for HPOS orders
+     *
+     * @param \WC_Order $order Order object
+     */
+    public function add_hpos_tracking_column_content($order) {
+        if (is_object($order) && method_exists($order, 'get_id')) {
+            $this->render_tracking_field($order->get_id());
+        }
+    }
+    
+    /**
+     * Render tracking field
+     *
+     * @param int $order_id Order ID
+     */
+    private function render_tracking_field($order_id) {
+        // Get existing tracking number if any
+        $tracking_number = get_post_meta($order_id, '_rj_indiapost_tracking_number', true);
+        
+        if (!empty($tracking_number)) {
+            // Display tracking number
+            echo '<div class="rj-list-tracking-info" id="rj-tracking-info-' . esc_attr($order_id) . '">';
+            echo '<div class="rj-list-tracking-number">' . esc_html($tracking_number) . '</div>';
+            echo '<a href="#" class="rj-list-edit-tracking" data-order-id="' . esc_attr($order_id) . '">Edit</a>';
             echo '</div>';
         }
+        
+        // Display input field and button (hidden if tracking number exists)
+        echo '<div class="rj-list-tracking-input" id="rj-tracking-input-' . esc_attr($order_id) . '"' . (!empty($tracking_number) ? ' style="display:none;"' : '') . '>';
+        echo '<input type="text" class="rj-list-tracking-number-input" id="rj-tracking-number-' . esc_attr($order_id) . '" value="' . esc_attr($tracking_number) . '" placeholder="' . esc_attr__('Enter tracking #', 'rj-woo-indiapost-tracking') . '">';
+        echo '<button type="button" class="button rj-list-add-tracking" data-order-id="' . esc_attr($order_id) . '">' . esc_html__('Add', 'rj-woo-indiapost-tracking') . '</button>';
+        echo '<div class="rj-list-message" id="rj-tracking-message-' . esc_attr($order_id) . '"></div>';
+        echo '</div>';
     }
     
     /**
@@ -91,7 +129,10 @@ class RJ_IndiaPost_Orders_List {
      * @param string $hook Current admin page
      */
     public function enqueue_admin_list_scripts($hook) {
-        // Only load on orders list page
+        // Debug output to console to help troubleshoot
+        echo '<script>console.log("Current hook: ' . esc_js($hook) . '");</script>';
+        
+        // Only load on orders list page (both traditional and HPOS)
         if ($hook == 'edit.php' && isset($_GET['post_type']) && $_GET['post_type'] == 'shop_order' || 
             $hook == 'woocommerce_page_wc-orders') {
             
@@ -158,25 +199,6 @@ class RJ_IndiaPost_Orders_List {
             'message' => __('Tracking number saved successfully.', 'rj-woo-indiapost-tracking'),
             'tracking_number' => $tracking_number
         ));
-    }
-
-    /**
-     * Get the appropriate screen ID based on whether HPOS is enabled
-     * 
-     * @return string Screen ID for orders
-     */
-    private function rj_indiapost_get_order_screen_id() {
-        // Check if using custom order tables (HPOS)
-        if (
-            class_exists('WooCommerce') && 
-            get_option('woocommerce_custom_orders_table_enabled') === 'yes'
-        ) {
-            // For HPOS the screen is woocommerce_page_wc-orders
-            return 'woocommerce_page_wc-orders';
-        } else {
-            // Traditional post type
-            return 'shop_order';
-        }
     }
 }
 

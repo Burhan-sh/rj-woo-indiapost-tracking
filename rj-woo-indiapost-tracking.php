@@ -96,14 +96,15 @@ class RJ_WooCommerce_IndiaPost_Tracking {
      * @return string Screen ID for orders
      */
     private function rj_indiapost_get_order_screen_id() {
-        // Simplified approach to check for HPOS
+        // Check if using custom order tables (HPOS)
         if (
             class_exists('WooCommerce') && 
-            function_exists('wc_get_page_screen_id') && 
             get_option('woocommerce_custom_orders_table_enabled') === 'yes'
         ) {
-            return wc_get_page_screen_id('shop-order');
+            // For HPOS the screen is woocommerce_page_wc-orders
+            return 'woocommerce_page_wc-orders';
         } else {
+            // Traditional post type
             return 'shop_order';
         }
     }

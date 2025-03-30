@@ -2,8 +2,10 @@
  * Styles for tracking column in WooCommerce orders list
  */
 
-/* Column width */
-.widefat .column-order_tracking {
+/* Column width - support both traditional and HPOS */
+.widefat .column-order_tracking,
+.widefat .column-tracking,
+.woocommerce-orders-table .column-tracking {
     width: 140px;
 }
 
@@ -80,12 +82,16 @@
 
 /* Responsive adjustments */
 @media screen and (max-width: 782px) {
-    .widefat .column-order_tracking {
+    .widefat .column-tracking,
+    .widefat .column-order_tracking,
+    .woocommerce-orders-table .column-tracking {
         text-align: left !important;
         padding-left: 0;
     }
     
-    .widefat td.column-order_tracking::before {
+    .widefat td.column-tracking::before,
+    .widefat td.column-order_tracking::before,
+    .woocommerce-orders-table td.column-tracking::before {
         content: "Tracking" !important;
     }
     
