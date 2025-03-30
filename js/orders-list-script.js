@@ -2,9 +2,6 @@
  * JavaScript for handling tracking inputs in WooCommerce orders list
  */
 jQuery(document).ready(function($) {
-    // Debug: Log when script is loaded
-    console.log('RJ IndiaPost Tracking orders list script loaded');
-    
     // Handle click on "Add" button
     $(document).on('click', '.rj-list-add-tracking', function(e) {
         e.preventDefault();
@@ -14,9 +11,6 @@ jQuery(document).ready(function($) {
         var inputField = $('#rj-tracking-number-' + orderId);
         var trackingNumber = inputField.val().trim();
         var messageContainer = $('#rj-tracking-message-' + orderId);
-        
-        // Debug
-        console.log('Add tracking clicked for order: ' + orderId);
         
         // Validation
         if (!trackingNumber) {
