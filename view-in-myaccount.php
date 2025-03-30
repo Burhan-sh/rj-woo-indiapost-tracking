@@ -29,8 +29,26 @@ class RJ_IndiaPost_Frontend_Display {
      * Enqueue scripts and styles for frontend
      */
     public function enqueue_frontend_scripts() {
+        // Check if we're on the My Account page without using is_account_page()
+        // This is safer as it doesn't rely on WooCommerce functions that might not be available
+        global $wp;
+        $is_account_page = false;
+        
+        // Check if this is the my-account endpoint
+        if (isset($wp->query_vars['pagename']) && $wp->query_vars['pagename'] === 'my-account') {
+            $is_account_page = true;
+        }
+        
+        // Also check for the account page ID if get_option is available
+        if (function_exists('get_option')) {
+            $account_page_id = get_option('woocommerce_myaccount_page_id');
+            if ($account_page_id && is_page($account_page_id)) {
+                $is_account_page = true;
+            }
+        }
+        
         // Only load on my account page
-        if (is_account_page()) {
+        if ($is_account_page) {
             // Enqueue QR code library
             wp_enqueue_script(
                 'qrcode-js',

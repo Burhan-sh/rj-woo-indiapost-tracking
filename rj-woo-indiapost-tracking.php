@@ -309,3 +309,6 @@ add_action('plugins_loaded', array('RJ_WooCommerce_IndiaPost_Tracking', 'rj_indi
 
 // Include frontend display file
 require_once plugin_dir_path(__FILE__) . 'view-in-myaccount.php';
+
+// Include orders list tracking file
+require_once plugin_dir_path(__FILE__) . 'wp-orders-listing.php';

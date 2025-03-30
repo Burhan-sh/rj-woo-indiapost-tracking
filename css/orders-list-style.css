@@ -1,0 +1,95 @@
+/**
+ * Styles for tracking column in WooCommerce orders list
+ */
+
+/* Column width */
+.widefat .column-order_tracking {
+    width: 140px;
+}
+
+/* Tracking information display */
+.rj-list-tracking-info {
+    display: flex;
+    flex-direction: column;
+    margin: 5px 0;
+}
+
+.rj-list-tracking-number {
+    font-size: 12px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 4px;
+    word-break: break-all;
+}
+
+.rj-list-edit-tracking {
+    font-size: 11px;
+    color: #0073aa;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.rj-list-edit-tracking:hover {
+    color: #00a0d2;
+    text-decoration: underline;
+}
+
+/* Input form */
+.rj-list-tracking-input {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin: 5px 0;
+}
+
+.rj-list-tracking-number-input {
+    width: 100%;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.rj-list-add-tracking {
+    padding: 2px 8px !important;
+    height: auto !important;
+    font-size: 11px !important;
+    line-height: 1.8 !important;
+    min-height: 0 !important;
+}
+
+/* Message styling */
+.rj-list-message {
+    display: none;
+    font-size: 11px;
+    padding: 3px 5px;
+    margin-top: 3px;
+    border-radius: 3px;
+    text-align: center;
+}
+
+.rj-list-message.success {
+    background-color: #dff0d8;
+    border: 1px solid #d6e9c6;
+    color: #3c763d;
+}
+
+.rj-list-message.error {
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    color: #a94442;
+}
+
+/* Responsive adjustments */
+@media screen and (max-width: 782px) {
+    .widefat .column-order_tracking {
+        text-align: left !important;
+        padding-left: 0;
+    }
+    
+    .widefat td.column-order_tracking::before {
+        content: "Tracking" !important;
+    }
+    
+    .rj-list-tracking-input {
+        margin-top: 8px;
+    }
+} 
