@@ -1,0 +1,73 @@
+.indiapost-tracking-container {
+    padding: 0;
+    margin: 0;
+}
+
+.indiapost-tracking-container p {
+    margin: 0 0 12px;
+}
+
+.indiapost-tracking-container label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.indiapost-tracking-container input[type="text"] {
+    width: 100%;
+    padding: 6px;
+    box-sizing: border-box;
+}
+
+#add_tracking_button {
+    width: 100%;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+#tracking_message {
+    margin-top: 8px;
+    padding: 8px;
+    display: none;
+    font-size: 12px;
+    text-align: center;
+    border-radius: 3px;
+}
+
+#tracking_message.success {
+    background-color: #dff0d8;
+    border: 1px solid #d6e9c6;
+    color: #3c763d;
+}
+
+#tracking_message.error {
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    color: #a94442;
+}
+
+/* QR Code Styles */
+.rj-indiapost-qr-container {
+    margin-bottom: 20px;
+    padding: 15px;
+    background-color: #f8f8f8;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.rj-indiapost-qr-container h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #23282d;
+}
+
+#rj_indiapost_qr_code {
+    margin: 10px auto;
+}
+
+.rj-indiapost-qr-container .description {
+    margin-top: 10px;
+    color: #666;
+    font-size: 13px;
+}

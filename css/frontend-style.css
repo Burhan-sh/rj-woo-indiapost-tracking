@@ -1,0 +1,128 @@
+.rj-indiapost-tracking-info {
+    margin: 30px 0;
+    padding: 20px;
+    background-color: #f8f8f8;
+    border: 1px solid #e5e5e5;
+    border-radius: 4px;
+}
+
+.rj-indiapost-tracking-info h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    font-size: 18px;
+    color: #333;
+}
+
+.rj-indiapost-tracking-details {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.rj-indiapost-qr-container {
+    margin-right: 20px;
+    margin-bottom: 15px;
+}
+
+.rj-indiapost-tracking-text {
+    flex: 1;
+    min-width: 200px;
+}
+
+.rj-indiapost-tracking-text p {
+    margin-bottom: 10px;
+}
+
+.rj-indiapost-tracking-text .button {
+    display: inline-block;
+    background-color: #4CAF50;
+    color: white;
+    padding: 8px 16px;
+    text-decoration: none;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
+
+.rj-indiapost-tracking-text .button:hover {
+    background-color: #45a049;
+    color: white;
+}
+
+@media (max-width: 600px) {
+    .rj-indiapost-tracking-details {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .rj-indiapost-qr-container {
+        margin-right: 0;
+        margin-bottom: 20px;
+    }
+}
+
+/* Tracking column in orders table */
+.rj-tracking-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.rj-tracking-qr-code {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 5px;
+}
+
+.rj-tracking-qr-code img {
+    max-width: 100%;
+    height: auto;
+}
+
+.rj-tracking-number {
+    font-size: 11px;
+    color: #666;
+    margin-bottom: 5px;
+    word-break: break-all;
+    text-align: center;
+}
+
+.rj-tracking-button {
+    display: inline-block;
+    padding: 3px 8px;
+    background-color: #4CAF50;
+    color: white;
+    text-decoration: none;
+    border-radius: 3px;
+    font-size: 12px;
+    font-weight: 600;
+    transition: background-color 0.3s;
+}
+
+.rj-tracking-button:hover {
+    background-color: #45a049;
+    color: white;
+}
+
+.rj-no-tracking {
+    color: #999;
+    font-size: 12px;
+    font-style: italic;
+}
+
+/* Make sure the tracking column has enough width */
+.woocommerce-orders-table__cell-order-tracking {
+    min-width: 100px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .woocommerce-orders-table__cell-order-tracking:before {
+        content: "Tracking" !important;
+    }
+    
+    .rj-tracking-info {
+        margin-top: 5px;
+    }
+} 
