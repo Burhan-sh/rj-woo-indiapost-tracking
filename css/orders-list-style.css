@@ -3,9 +3,8 @@
  */
 
 /* Column width */
-.widefat .column-order_tracking,
-.woocommerce-orders-table .column-order_tracking {
-    width: 150px;
+.widefat .column-order_tracking {
+    width: 140px;
 }
 
 /* Tracking information display */
@@ -81,14 +80,12 @@
 
 /* Responsive adjustments */
 @media screen and (max-width: 782px) {
-    .widefat .column-order_tracking,
-    .woocommerce-orders-table .column-order_tracking {
+    .widefat .column-order_tracking {
         text-align: left !important;
         padding-left: 0;
     }
     
-    .widefat td.column-order_tracking::before,
-    .woocommerce-orders-table td.column-order_tracking::before {
+    .widefat td.column-order_tracking::before {
         content: "Tracking" !important;
     }
     
