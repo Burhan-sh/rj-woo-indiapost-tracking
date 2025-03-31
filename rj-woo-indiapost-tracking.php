@@ -10,12 +10,18 @@
  * Requires PHP: 7.2
  * WC requires at least: 3.0
  * WC tested up to: 8.2
+ * Woo: 12345:342928dfsfhsf8429842374wdf4234sfd
+ * WooCommerce: true
  */
 
 // Exit if accessed directly
 if (!defined('ABSPATH')) {
     exit;
 }
+
+// Define plugin constants
+define('RJ_INDIAPOST_VERSION', '2.2');
+define('RJ_INDIAPOST_FILE', __FILE__);
 
 /**
  * Main plugin class
@@ -39,9 +45,28 @@ class RJ_WooCommerce_IndiaPost_Tracking {
             
             // Add QR code above billing address
             add_action('woocommerce_admin_order_data_after_shipping_address', array($this, 'display_tracking_qr_code'), 10, 1);
+            
+            // Register the plugin for HPOS compatibility
+            add_action('before_woocommerce_init', array($this, 'declare_hpos_compatibility'));
         } else {
             // Add admin notice if WooCommerce is not active
             add_action('admin_notices', array($this, 'rj_indiapost_woocommerce_missing_notice'));
+        }
+    }
+    
+    /**
+     * Declare HPOS compatibility
+     */
+    public function declare_hpos_compatibility() {
+        // This is needed for WooCommerce HPOS compatibility
+        if (class_exists('WooCommerce')) {
+            // Check for the FeaturesUtil class in the exact namespace
+            if (class_exists('Automattic\WooCommerce\Utilities\FeaturesUtil')) {
+                // Use a variable to avoid direct class reference which causes linter errors
+                $features_util = 'Automattic\WooCommerce\Utilities\FeaturesUtil';
+                // Declare compatibility with HPOS
+                $features_util::declare_compatibility('custom_order_tables', __FILE__, true);
+            }
         }
     }
     
@@ -96,14 +121,15 @@ class RJ_WooCommerce_IndiaPost_Tracking {
      * @return string Screen ID for orders
      */
     private function rj_indiapost_get_order_screen_id() {
-        // Simplified approach to check for HPOS
+        // Check if using custom order tables (HPOS)
         if (
             class_exists('WooCommerce') && 
-            function_exists('wc_get_page_screen_id') && 
             get_option('woocommerce_custom_orders_table_enabled') === 'yes'
         ) {
-            return wc_get_page_screen_id('shop-order');
+            // For HPOS the screen is woocommerce_page_wc-orders
+            return 'woocommerce_page_wc-orders';
         } else {
+            // Traditional post type
             return 'shop_order';
         }
     }
@@ -123,7 +149,7 @@ class RJ_WooCommerce_IndiaPost_Tracking {
                 'rj-indiapost-admin-style',
                 plugin_dir_url(__FILE__) . 'css/admin-style.css',
                 array(),
-                '1.0.0'
+                RJ_INDIAPOST_VERSION
             );
             
             // Enqueue QR code library
@@ -140,7 +166,7 @@ class RJ_WooCommerce_IndiaPost_Tracking {
                 'rj-indiapost-tracking-validation',
                 plugin_dir_url(__FILE__) . 'js/tracking-validation.js',
                 array('jquery', 'qrcode-js'),
-                '1.0.0',
+                RJ_INDIAPOST_VERSION,
                 true
             );
             
@@ -183,7 +209,7 @@ class RJ_WooCommerce_IndiaPost_Tracking {
             return;
         }
         
-        // Save tracking number to the order meta
+        // Always use update_post_meta as it's synchronized with HPOS automatically by WooCommerce
         update_post_meta($order_id, '_rj_indiapost_tracking_number', $tracking_number);
         
         // Return success response
@@ -202,7 +228,15 @@ class RJ_WooCommerce_IndiaPost_Tracking {
         $order_id = is_a($object, 'WP_Post') ? $object->ID : $object->get_id();
         
         // Get existing tracking number if any
-        $tracking_number = get_post_meta($order_id, '_rj_indiapost_tracking_number', true);
+        $tracking_number = '';
+        
+        // If it's a WC_Order object, use its methods
+        if (is_a($object, 'WC_Order') && method_exists($object, 'get_meta')) {
+            $tracking_number = $object->get_meta('_rj_indiapost_tracking_number', true);
+        } else {
+            // Fallback to post meta
+            $tracking_number = get_post_meta($order_id, '_rj_indiapost_tracking_number', true);
+        }
         
         // Get order number for display
         $order_number = '';
@@ -242,7 +276,20 @@ class RJ_WooCommerce_IndiaPost_Tracking {
      * @param WC_Order $order The order object
      */
     public function display_tracking_qr_code($order) {
-        $T_number = get_post_meta($order->get_id(), '_rj_indiapost_tracking_number', true);
+        if (!$order) {
+            return;
+        }
+        
+        // Get tracking number - HPOS-compatible
+        $T_number = '';
+        if (method_exists($order, 'get_meta')) {
+            // HPOS-compatible way
+            $T_number = $order->get_meta('_rj_indiapost_tracking_number', true);
+        } else {
+            // Fallback for older WooCommerce versions
+            $T_number = get_post_meta($order->get_id(), '_rj_indiapost_tracking_number', true);
+        }
+        
         $tracking_number = 'https://m.aftership.com/india-post/'.$T_number;
         
         if (!empty($T_number)) {

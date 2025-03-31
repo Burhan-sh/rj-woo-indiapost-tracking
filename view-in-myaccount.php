@@ -114,7 +114,16 @@ class RJ_IndiaPost_Frontend_Display {
      * @param WC_Order $order Order object
      */
     public function add_tracking_column_content($order) {
-        $tracking_number = get_post_meta($order->get_id(), '_rj_indiapost_tracking_number', true);
+        // Get tracking number - HPOS-compatible way
+        $tracking_number = '';
+        
+        if (method_exists($order, 'get_meta')) {
+            // HPOS-compatible way
+            $tracking_number = $order->get_meta('_rj_indiapost_tracking_number', true);
+        } else {
+            // Fallback to post meta
+            $tracking_number = get_post_meta($order->get_id(), '_rj_indiapost_tracking_number', true);
+        }
         
         if (!empty($tracking_number)) {
             $tracking_url = 'https://m.aftership.com/india-post/' . $tracking_number;
