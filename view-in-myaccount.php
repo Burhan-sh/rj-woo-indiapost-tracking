@@ -109,12 +109,46 @@ class RJ_IndiaPost_Frontend_Display {
     }
     
     /**
+     * Handle order meta data in a way that works with both traditional posts and HPOS
+     * 
+     * @param int|WC_Order $order Order ID or order object
+     * @param string $key Meta key
+     * @param mixed $value Optional meta value to set
+     * @param bool $is_get Whether this is a get or update operation
+     * @return mixed|void Meta value if getting, void if updating
+     */
+    private function handle_order_meta($order, $key, $value = null, $is_get = true) {
+        // Get WC_Order object if we have an ID
+        if (!is_object($order) && function_exists('wc_get_order')) {
+            $order = wc_get_order($order);
+        }
+
+        // If we couldn't get an order or wc_get_order doesn't exist, fall back to post meta
+        if (!is_object($order)) {
+            if ($is_get) {
+                return get_post_meta($order, $key, true);
+            } else {
+                update_post_meta($order, $key, $value);
+                return;
+            }
+        }
+
+        // Use WC_Order methods which work with both HPOS and traditional storage
+        if ($is_get) {
+            return $order->get_meta($key);
+        } else {
+            $order->update_meta_data($key, $value);
+            $order->save();
+        }
+    }
+    
+    /**
      * Add content to tracking column
      * 
      * @param WC_Order $order Order object
      */
     public function add_tracking_column_content($order) {
-        $tracking_number = get_post_meta($order->get_id(), '_rj_indiapost_tracking_number', true);
+        $tracking_number = $this->handle_order_meta($order, '_rj_indiapost_tracking_number', null, true);
         
         if (!empty($tracking_number)) {
             $tracking_url = 'https://m.aftership.com/india-post/' . $tracking_number;

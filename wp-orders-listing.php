@@ -58,6 +58,40 @@ class RJ_IndiaPost_Orders_List {
     }
     
     /**
+     * Handle order meta data in a way that works with both traditional posts and HPOS
+     * 
+     * @param int|WC_Order $order Order ID or order object
+     * @param string $key Meta key
+     * @param mixed $value Optional meta value to set
+     * @param bool $is_get Whether this is a get or update operation
+     * @return mixed|void Meta value if getting, void if updating
+     */
+    private function handle_order_meta($order, $key, $value = null, $is_get = true) {
+        // Get WC_Order object if we have an ID
+        if (!is_object($order) && function_exists('wc_get_order')) {
+            $order = wc_get_order($order);
+        }
+
+        // If we couldn't get an order or wc_get_order doesn't exist, fall back to post meta
+        if (!is_object($order)) {
+            if ($is_get) {
+                return get_post_meta($order, $key, true);
+            } else {
+                update_post_meta($order, $key, $value);
+                return;
+            }
+        }
+
+        // Use WC_Order methods which work with both HPOS and traditional storage
+        if ($is_get) {
+            return $order->get_meta($key);
+        } else {
+            $order->update_meta_data($key, $value);
+            $order->save();
+        }
+    }
+    
+    /**
      * Add content to tracking column
      *
      * @param string $column Column name
@@ -65,9 +99,9 @@ class RJ_IndiaPost_Orders_List {
      */
     public function add_order_tracking_column_content($column, $order) {
         if ($column === 'order_tracking') {
-            // Get existing tracking number if any
+            // Get existing tracking number if any using HPOS-compatible method
             $order_value_id = $order->get_id();
-            $tracking_number = get_post_meta($order_value_id, '_rj_indiapost_tracking_number', true);
+            $tracking_number = $this->handle_order_meta($order, '_rj_indiapost_tracking_number', null, true);
             
             if (!empty($tracking_number)) {
                 // Display tracking number
@@ -150,8 +184,8 @@ class RJ_IndiaPost_Orders_List {
             return;
         }
         
-        // Save tracking number to the order meta
-        update_post_meta($order_id, '_rj_indiapost_tracking_number', $tracking_number);
+        // Save tracking number to the order meta using HPOS-compatible method
+        $this->handle_order_meta($order_id, '_rj_indiapost_tracking_number', $tracking_number, false);
         
         // Return success response
         wp_send_json_success(array(

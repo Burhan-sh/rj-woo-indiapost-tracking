@@ -10,12 +10,20 @@
  * Requires PHP: 7.2
  * WC requires at least: 3.0
  * WC tested up to: 8.2
+ * Woo: 12345:342928dfsfhsf8429842374wdf4234sfd
  */
 
 // Exit if accessed directly
 if (!defined('ABSPATH')) {
     exit;
 }
+
+// Add HPOS compatibility
+add_action('before_woocommerce_init', function() {
+    if (class_exists('\Automattic\WooCommerce\Utilities\FeaturesUtil')) {
+        \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility('custom_order_tables', __FILE__, true);
+    }
+});
 
 /**
  * Main plugin class
@@ -96,14 +104,15 @@ class RJ_WooCommerce_IndiaPost_Tracking {
      * @return string Screen ID for orders
      */
     private function rj_indiapost_get_order_screen_id() {
-        // Simplified approach to check for HPOS
+        // Check if using custom order tables (HPOS)
         if (
             class_exists('WooCommerce') && 
-            function_exists('wc_get_page_screen_id') && 
             get_option('woocommerce_custom_orders_table_enabled') === 'yes'
         ) {
-            return wc_get_page_screen_id('shop-order');
+            // For HPOS the screen is woocommerce_page_wc-orders
+            return 'woocommerce_page_wc-orders';
         } else {
+            // Traditional post type
             return 'shop_order';
         }
     }
@@ -162,6 +171,40 @@ class RJ_WooCommerce_IndiaPost_Tracking {
     }
     
     /**
+     * Handle order meta data in a way that works with both traditional posts and HPOS
+     * 
+     * @param int|WC_Order $order Order ID or order object
+     * @param string $key Meta key
+     * @param mixed $value Optional meta value to set
+     * @param bool $is_get Whether this is a get or update operation
+     * @return mixed|void Meta value if getting, void if updating
+     */
+    private function handle_order_meta($order, $key, $value = null, $is_get = true) {
+        // Get WC_Order object if we have an ID
+        if (!is_object($order) && function_exists('wc_get_order')) {
+            $order = wc_get_order($order);
+        }
+
+        // If we couldn't get an order or wc_get_order doesn't exist, fall back to post meta
+        if (!is_object($order)) {
+            if ($is_get) {
+                return get_post_meta($order, $key, true);
+            } else {
+                update_post_meta($order, $key, $value);
+                return;
+            }
+        }
+
+        // Use WC_Order methods which work with both HPOS and traditional storage
+        if ($is_get) {
+            return $order->get_meta($key);
+        } else {
+            $order->update_meta_data($key, $value);
+            $order->save();
+        }
+    }
+    
+    /**
      * AJAX handler to save tracking number
      */
     public function rj_indiapost_save_tracking_number() {
@@ -183,8 +226,8 @@ class RJ_WooCommerce_IndiaPost_Tracking {
             return;
         }
         
-        // Save tracking number to the order meta
-        update_post_meta($order_id, '_rj_indiapost_tracking_number', $tracking_number);
+        // Save tracking number to the order meta using HPOS-compatible method
+        $this->handle_order_meta($order_id, '_rj_indiapost_tracking_number', $tracking_number, false);
         
         // Return success response
         wp_send_json_success(array(
@@ -201,8 +244,8 @@ class RJ_WooCommerce_IndiaPost_Tracking {
         // Get the order ID
         $order_id = is_a($object, 'WP_Post') ? $object->ID : $object->get_id();
         
-        // Get existing tracking number if any
-        $tracking_number = get_post_meta($order_id, '_rj_indiapost_tracking_number', true);
+        // Get existing tracking number if any using HPOS-compatible method
+        $tracking_number = $this->handle_order_meta($order_id, '_rj_indiapost_tracking_number', null, true);
         
         // Get order number for display
         $order_number = '';
@@ -242,7 +285,7 @@ class RJ_WooCommerce_IndiaPost_Tracking {
      * @param WC_Order $order The order object
      */
     public function display_tracking_qr_code($order) {
-        $T_number = get_post_meta($order->get_id(), '_rj_indiapost_tracking_number', true);
+        $T_number = $this->handle_order_meta($order, '_rj_indiapost_tracking_number', null, true);
         $tracking_number = 'https://m.aftership.com/india-post/'.$T_number;
         
         if (!empty($T_number)) {
