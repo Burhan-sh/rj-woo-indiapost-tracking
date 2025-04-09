@@ -70,9 +70,16 @@ function rj_handle_csv_upload($file) {
     global $wpdb;
     $table_name = $wpdb->prefix . 'indiapost_tracking_number';
 
+    // Read the first row to check for the header
+    $headers = fgetcsv($csvFile);
+    if (count($headers) !== 1 || $headers[0] !== 'India_post_tracking') {
+        echo '<div class="error"><p>' . __('Invalid CSV format. Please ensure the first row contains only "India_post_tracking" as the header.', 'rj-woo-indiapost-tracking') . '</p></div>';
+        fclose($csvFile);
+        return;
+    }
+
     while (($row = fgetcsv($csvFile)) !== FALSE) {
         $tracking_id = sanitize_text_field($row[0]);
-        $order_id = intval($row[1]);
 
         // Check for duplicates
         $existing = $wpdb->get_var($wpdb->prepare("SELECT COUNT(*) FROM $table_name WHERE tracking_id = %s", $tracking_id));
@@ -80,7 +87,7 @@ function rj_handle_csv_upload($file) {
             // Insert new tracking number
             $wpdb->insert($table_name, array(
                 'tracking_id' => $tracking_id,
-                'order_id' => $order_id,
+                'order_id' => null, // Assuming order_id is not provided in this case
                 'allocated_status' => 'pending'
             ));
         }
