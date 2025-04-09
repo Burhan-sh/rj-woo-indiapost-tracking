@@ -286,6 +286,9 @@ class RJ_WooCommerce_IndiaPost_Tracking {
      */
     public function display_tracking_qr_code($order) {
         $T_number = $this->handle_order_meta($order, '_rj_indiapost_tracking_number', null, true);
+        $whatsapp_number = $order->get_billing_phone();
+        $whatsapp_number = str_replace('+', '', $whatsapp_number);
+
         $tracking_number = 'https://m.aftership.com/india-post/'.$T_number;
         
         if (!empty($T_number)) {
@@ -293,9 +296,25 @@ class RJ_WooCommerce_IndiaPost_Tracking {
             <div class="rj-indiapost-qr-container">
                 <h4><?php _e('India Post Tracking QR Code', 'rj-woo-indiapost-tracking'); ?></h4>
                 <div id="rj_indiapost_qr_code" data-tracking="<?php echo esc_attr($tracking_number); ?>"></div>
-                <button type="button" class="button copy-tracking-btn" data-tracking="<?php echo esc_attr($tracking_number); ?>">
-                    <?php _e('Copy Tracking Link', 'rj-woo-indiapost-tracking'); ?>
-                </button>
+                <div style="text-align: center; margin-top: 10px;">
+                    <button type="button" style="width:85%" class="button copy-tracking-btn" data-tracking="<?php echo esc_attr($tracking_number); ?>">
+                        <?php _e('Copy Tracking Link', 'rj-woo-indiapost-tracking'); ?>
+                    </button>
+
+                    <div class="button_tracking_wrapper" style="margin-top: 10px; display: flex; justify-content: center; gap: 10px;">
+                        <a href="https://wa.me/<?php echo $whatsapp_number; ?>?text=<?php echo urlencode('Your Tracking Number is: ' . $tracking_number); ?>" target="_blank">
+                            <button type="button" class="button" style="background-color:#25D366; color:white;">
+                                Send to WhatsApp
+                            </button>
+                        </a>
+
+                        <a href="https://www.indiapost.gov.in/VAS/Pages/trackconsignment.aspx?consignment=<?php echo urlencode($tracking_number); ?>" target="_blank">
+                            <button type="button" class="button" style="background-color:#0073aa; color:white;">
+                                Track
+                            </button>
+                        </a>
+                    </div>
+                </div>
                 <span class="copy-success-message" style="display:none; color:green; margin-left:10px;"><?php _e('Copied!', 'rj-woo-indiapost-tracking'); ?></span>
             </div>
             <?php

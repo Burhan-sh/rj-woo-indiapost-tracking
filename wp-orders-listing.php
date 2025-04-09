@@ -112,8 +112,9 @@ class RJ_IndiaPost_Orders_List {
             
             // Display input field and button (hidden if tracking number exists)
             echo '<div class="rj-list-tracking-input" id="rj-tracking-input-' . esc_attr($order_value_id) . '"' . (!empty($tracking_number) ? ' style="display:none;"' : '') . '>';
-            echo '<input type="text" class="rj-list-tracking-number-input" id="rj-tracking-number-' . esc_attr($order_value_id) . '" value="' . esc_attr($tracking_number) . '" placeholder="' . esc_attr__('Enter tracking #', 'rj-woo-indiapost-tracking') . '">';
+            echo '<input type="text" class="rj-list-tracking-number-input" id="rj-tracking-number-' . esc_attr($order_value_id) . '"  autocomplete="off" value="' . esc_attr($tracking_number) . '" placeholder="' . esc_attr__('Enter tracking #', 'rj-woo-indiapost-tracking') . '">';
             echo '<button type="button" class="button rj-list-add-tracking" data-order-id="' . esc_attr($order_value_id) . '">' . esc_html__('Add', 'rj-woo-indiapost-tracking') . '</button>';
+            echo '<span style="text-align: center;">Order ID : '.esc_attr($order_value_id).'</span>';
             echo '<div class="rj-list-message" id="rj-tracking-message-' . esc_attr($order_value_id) . '"></div>';
             echo '</div>';
         }
