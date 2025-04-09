@@ -25,6 +25,9 @@ add_action('before_woocommerce_init', function() {
     }
 });
 
+// Include tracking module
+require_once plugin_dir_path(__FILE__) . 'tracking-module.php'; 
+
 /**
  * Main plugin class
  */

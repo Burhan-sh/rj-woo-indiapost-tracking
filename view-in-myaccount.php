@@ -196,4 +196,7 @@ class RJ_IndiaPost_Frontend_Display {
 }
 
 // Initialize the class
-new RJ_IndiaPost_Frontend_Display(); 
+new RJ_IndiaPost_Frontend_Display();
+
+// Include tracking module
+require_once plugin_dir_path(__FILE__) . 'tracking-module.php'; 
