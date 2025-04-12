@@ -29,6 +29,9 @@ class RJ_IndiaPost_Auto_Tracking_Assignment {
         // Hook into WooCommerce order status changes
         add_action('woocommerce_order_status_changed', array($this, 'maybe_assign_tracking'), 10, 4);
         add_action('woocommerce_new_order', array($this, 'maybe_assign_tracking_new_order'), 10, 1);
+        
+        // Hook into order status changes to update tracking status
+        add_action('woocommerce_order_status_changed', array($this, 'update_tracking_status'), 10, 4);
     }
     
     /**
@@ -388,17 +391,44 @@ class RJ_IndiaPost_Auto_Tracking_Assignment {
             return;
         }
         
-        // Update tracking record
+        // Check if this tracking is already assigned to this order
+        $existing_record = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT * FROM {$table_name} WHERE tracking_id = %s",
+                $tracking_number
+            )
+        );
+        
+        // If tracking is already assigned to this order, don't update it again
+        if ($existing_record && !empty($existing_record->order_id) && $existing_record->order_id == $order_id) {
+            return;
+        }
+        
+        // Check if order already has a tracking in this table
+        $order_has_tracking = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table_name} WHERE order_id = %s",
+                $order_id
+            )
+        );
+        
+        if ($order_has_tracking) {
+            // Order already has tracking in this table, don't assign another one
+            return;
+        }
+        
+        // Update tracking record with current timestamp for modified_at
         $wpdb->update(
             $table_name,
             array(
                 'order_id' => $order_id,
                 'current_status' => $this->get_order_status($order),
                 'datetime' => current_time('mysql'),
+                'modified_at' => current_time('mysql'),
                 'is_accessable' => 'No'
             ),
             array('tracking_id' => $tracking_number),
-            array('%s', '%s', '%s', '%s'),
+            array('%s', '%s', '%s', '%s', '%s'),
             array('%s')
         );
     }
@@ -486,6 +516,104 @@ class RJ_IndiaPost_Auto_Tracking_Assignment {
         if (!file_exists($logs_dir . '.htaccess')) {
             file_put_contents($logs_dir . '.htaccess', 'deny from all');
         }
+    }
+    
+    /**
+     * Update tracking status when order status changes
+     *
+     * @param int $order_id Order ID
+     * @param string $from_status Previous status
+     * @param string $to_status New status
+     * @param WC_Order $order Order object
+     */
+    public function update_tracking_status($order_id, $from_status, $to_status, $order) {
+        // Get tracking number from order
+        $tracking_number = $this->get_order_meta($order_id, '_rj_indiapost_tracking_number');
+        
+        // If no tracking number, nothing to update
+        if (empty($tracking_number)) {
+            return;
+        }
+        
+        // Determine tracking type from tracking number prefix
+        $tracking_type = '';
+        if (strpos($tracking_number, 'EG') === 0) {
+            $tracking_type = 'EG';
+        } elseif (strpos($tracking_number, 'CG') === 0) {
+            $tracking_type = 'CG';
+        } else {
+            // Unknown tracking type
+            return;
+        }
+        
+        // Update tracking status in database
+        $this->update_tracking_status_in_database($tracking_type, $tracking_number, $to_status);
+    }
+    
+    /**
+     * Update tracking status in database
+     *
+     * @param string $type Tracking type (EG or CG)
+     * @param string $tracking_number Tracking number
+     * @param string $status New status
+     */
+    private function update_tracking_status_in_database($type, $tracking_number, $status) {
+        global $wpdb;
+        
+        $table_name = $wpdb->prefix . $type . '_india_post_tracking';
+        
+        // Check if tracking number exists in database
+        $exists = $wpdb->get_var(
+            $wpdb->prepare(
+                "SELECT COUNT(*) FROM {$table_name} WHERE tracking_id = %s",
+                $tracking_number
+            )
+        );
+        
+        if (!$exists) {
+            // Tracking number not found in database
+            return;
+        }
+        
+        // Update current_status only (don't change other fields like modified_at)
+        $wpdb->update(
+            $table_name,
+            array(
+                'current_status' => $status,
+            ),
+            array('tracking_id' => $tracking_number),
+            array('%s'),
+            array('%s')
+        );
+        
+        // Log the status update
+        $this->log_tracking_status_update($tracking_number, $type, $status);
+    }
+    
+    /**
+     * Log tracking status update
+     *
+     * @param string $tracking_number Tracking number
+     * @param string $tracking_type Tracking type (EG or CG)
+     * @param string $status New status
+     */
+    private function log_tracking_status_update($tracking_number, $tracking_type, $status) {
+        $log_dir = $this->get_logs_directory();
+        $log_file = $log_dir . 'tracking_status_updates.log';
+        
+        $log_entry = sprintf(
+            "[%s] %s tracking number %s status updated to: %s\n",
+            current_time('mysql'),
+            $tracking_type,
+            $tracking_number,
+            $status
+        );
+        
+        // Ensure log directory exists
+        $this->ensure_logs_directory_exists();
+        
+        // Append to log file
+        file_put_contents($log_file, $log_entry, FILE_APPEND);
     }
     
     /**
