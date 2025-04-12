@@ -22,6 +22,7 @@
         var form = $('#tracking-csv-upload-form');
         var responseContainer = $('#upload-response');
         var submitButton = $('#upload-csv-btn');
+        var processingOverlay = $('#processing-overlay');
         
         if (!form.length) {
             return;
@@ -45,6 +46,13 @@
                 return;
             }
             
+            // Show processing overlay
+            processingOverlay.addClass('active');
+            // Update the processing text with file name
+            $('.processing-text').text(rj_tracking_vars.processing_text);
+            $('.processing-subtext').html(rj_tracking_vars.processing_subtext + '<br>' + 
+                                          'File: <strong>' + fileName + '</strong>');
+            
             // Create FormData object
             var formData = new FormData();
             formData.append('action', 'rj_indiapost_upload_csv');
@@ -66,6 +74,9 @@
                     // Reset button
                     submitButton.prop('disabled', false).text('Upload CSV');
                     $('.upload-loading').remove();
+                    
+                    // Hide processing overlay
+                    processingOverlay.removeClass('active');
                     
                     // Handle response
                     if (response.success) {
@@ -91,6 +102,9 @@
                     // Reset button
                     submitButton.prop('disabled', false).text('Upload CSV');
                     $('.upload-loading').remove();
+                    
+                    // Hide processing overlay
+                    processingOverlay.removeClass('active');
                     
                     // Show error message
                     showResponse(responseContainer, rj_tracking_vars.upload_error, 'error');

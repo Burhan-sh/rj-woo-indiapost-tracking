@@ -86,7 +86,9 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
                 'nonce' => wp_create_nonce('rj_indiapost_tracking_csv_nonce'),
                 'uploading_text' => __('Uploading...', 'rj-woo-indiapost-tracking'),
                 'upload_success' => __('CSV uploaded successfully!', 'rj-woo-indiapost-tracking'),
-                'upload_error' => __('Error uploading CSV. Please try again.', 'rj-woo-indiapost-tracking')
+                'upload_error' => __('Error uploading CSV. Please try again.', 'rj-woo-indiapost-tracking'),
+                'processing_text' => __('Processing CSV File...', 'rj-woo-indiapost-tracking'),
+                'processing_subtext' => __('Please wait while we process your tracking numbers.', 'rj-woo-indiapost-tracking')
             )
         );
     }
@@ -114,6 +116,13 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
         ?>
         <div class="wrap">
             <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+            
+            <!-- Processing Overlay -->
+            <div id="processing-overlay" class="processing-overlay">
+                <div class="processing-spinner"></div>
+                <div class="processing-text"><?php _e('Processing CSV File...', 'rj-woo-indiapost-tracking'); ?></div>
+                <div class="processing-subtext"><?php _e('Please wait while we process your tracking numbers. This may take a moment depending on the file size.', 'rj-woo-indiapost-tracking'); ?></div>
+            </div>
             
             <!-- Upload Form -->
             <div class="tracking-upload-container">
