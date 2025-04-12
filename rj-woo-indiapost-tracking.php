@@ -374,3 +374,6 @@ require_once plugin_dir_path(__FILE__) . 'view-in-myaccount.php';
 
 // Include orders list tracking file
 require_once plugin_dir_path(__FILE__) . 'wp-orders-listing.php';
+
+// Include CSV upload functionality with logs
+require_once plugin_dir_path(__FILE__) . 'tracking-csv-upload-with-logs.php';

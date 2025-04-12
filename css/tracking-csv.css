@@ -1,0 +1,154 @@
+/**
+ * Styles for the India Post Tracking CSV Upload Page
+ */
+
+/* General Container Styling */
+.tracking-upload-container {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    margin-bottom: 20px;
+    padding: 15px;
+}
+
+.tracking-upload-container h2 {
+    margin-top: 0;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+/* Form Styling */
+.tracking-upload-form {
+    margin-top: 10px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+#tracking-csv-file {
+    width: 100%;
+    max-width: 400px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    background-color: #f9f9f9;
+}
+
+.form-actions {
+    margin-top: 15px;
+}
+
+/* Response Message Styling */
+.upload-response {
+    margin-top: 15px;
+    padding: 10px;
+    border-radius: 3px;
+}
+
+.upload-success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.upload-error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+/* List Table Styling */
+.tracking-list-container {
+    margin-top: 20px;
+}
+
+/* Tab Styling */
+.nav-tab {
+    margin-bottom: 10px;
+}
+
+/* Responsive Styling */
+@media screen and (max-width: 782px) {
+    .form-group label {
+        margin-bottom: 10px;
+    }
+    
+    #tracking-csv-file {
+        max-width: 100%;
+    }
+}
+
+/* Loading Indicator */
+.upload-loading {
+    display: inline-block;
+    margin-left: 10px;
+    vertical-align: middle;
+}
+
+.upload-loading::after {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #3498db;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Action Links */
+.delete-tracking {
+    color: #a00;
+}
+
+.delete-tracking:hover {
+    color: #dc3232;
+    text-decoration: none;
+}
+
+/* Log Files Styling */
+.log-files-list {
+    margin-top: 20px;
+}
+
+.log-files-list h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+/* Log File Viewer */
+.log-file-header {
+    margin-bottom: 20px;
+}
+
+.log-file-header h3 {
+    margin-top: 15px;
+    margin-bottom: 5px;
+}
+
+.log-file-content {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    padding: 15px;
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.log-file-content pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+} 
