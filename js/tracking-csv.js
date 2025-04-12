@@ -32,83 +32,132 @@
             e.preventDefault();
             
             // Check if file is selected
-            var fileInput = $('#tracking-csv-file')[0];
-            if (!fileInput.files.length) {
-                showResponse(responseContainer, rj_tracking_vars.upload_error + ' ' + 'Please select a CSV file.', 'error');
+            var fileInput = $('#tracking-csv-file');
+            if (fileInput[0].files.length === 0) {
+                $('#upload-response').html('<div class="notice notice-error"><p>' + rj_tracking_vars.upload_error + '</p></div>');
                 return;
             }
             
-            // Check file extension
-            var fileName = fileInput.files[0].name;
-            var fileExt = fileName.split('.').pop().toLowerCase();
-            if (fileExt !== 'csv') {
-                showResponse(responseContainer, rj_tracking_vars.upload_error + ' ' + 'Please select a valid CSV file.', 'error');
-                return;
-            }
-            
-            // Show processing overlay
-            processingOverlay.addClass('active');
-            // Update the processing text with file name
-            $('.processing-text').text(rj_tracking_vars.processing_text);
-            $('.processing-subtext').html(rj_tracking_vars.processing_subtext + '<br>' + 
-                                          'File: <strong>' + fileName + '</strong>');
-            
-            // Create FormData object
-            var formData = new FormData();
+            // Get form data
+            var formData = new FormData(this);
             formData.append('action', 'rj_indiapost_upload_csv');
             formData.append('security', rj_tracking_vars.nonce);
-            formData.append('tracking_csv_file', fileInput.files[0]);
             
-            // Disable submit button and show loading indicator
-            submitButton.prop('disabled', true).text(rj_tracking_vars.uploading_text);
-            submitButton.after('<span class="upload-loading"></span>');
+            // Show progress bar
+            $('#upload-progress-container').show();
+            $('#progress-status').text(rj_tracking_vars.processing_text);
+            $('#progress-bar').css('width', '0%');
+            $('#progress-percentage').text('0%');
             
-            // Send AJAX request
-            $.ajax({
-                url: rj_tracking_vars.ajax_url,
-                type: 'POST',
-                data: formData,
-                contentType: false,
-                processData: false,
-                success: function(response) {
-                    // Reset button
-                    submitButton.prop('disabled', false).text('Upload CSV');
-                    $('.upload-loading').remove();
-                    
-                    // Hide processing overlay
-                    processingOverlay.removeClass('active');
-                    
-                    // Handle response
-                    if (response.success) {
-                        showResponse(responseContainer, response.data.message, 'success');
-                        // Reset file input
-                        fileInput.value = '';
-                        
-                        // Reload page after 2 seconds to show the new data
-                        setTimeout(function() {
-                            // If a log file was created, redirect to the log view
-                            if (response.data.log_file) {
-                                window.location.href = window.location.href.split('?')[0] + 
-                                    '?page=indiapost-trackings&tab=logs&log=' + response.data.log_file;
-                            } else {
-                                location.reload();
-                            }
-                        }, 2000);
-                    } else {
-                        showResponse(responseContainer, response.data.message || rj_tracking_vars.upload_error, 'error');
-                    }
-                },
-                error: function() {
-                    // Reset button
-                    submitButton.prop('disabled', false).text('Upload CSV');
-                    $('.upload-loading').remove();
-                    
-                    // Hide processing overlay
-                    processingOverlay.removeClass('active');
-                    
-                    // Show error message
-                    showResponse(responseContainer, rj_tracking_vars.upload_error, 'error');
+            // Clear previous response
+            $('#upload-response').empty();
+            
+            // Start the upload with progress tracking
+            var xhr = new XMLHttpRequest();
+            
+            // Track progress (can be used for both upload and download)
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    var percentComplete = Math.round((e.loaded / e.total) * 100);
+                    $('#progress-bar').css('width', percentComplete + '%');
+                    $('#progress-percentage').text(percentComplete + '%');
                 }
+            });
+            
+            // Setup for completion
+            xhr.addEventListener('load', function() {
+                if (xhr.status === 200) {
+                    try {
+                        var response = JSON.parse(xhr.responseText);
+                        
+                        // Update progress to 100% on successful upload
+                        $('#progress-bar').css('width', '100%');
+                        $('#progress-percentage').text('100% - ' + rj_tracking_vars.upload_success);
+                        
+                        if (response.success) {
+                            // Display success message with details
+                            $('#upload-response').html(
+                                '<div class="notice notice-success"><p>' + 
+                                response.data.message + 
+                                '</p></div>'
+                            );
+                            
+                            // Reset form after successful upload
+                            $('#tracking-csv-upload-form')[0].reset();
+                            
+                            // Refresh the page after 2 seconds to show the new data
+                            setTimeout(function() {
+                                location.reload();
+                            }, 2000);
+                        } else {
+                            // Show error message
+                            $('#upload-response').html(
+                                '<div class="notice notice-error"><p>' + 
+                                response.data.message + 
+                                '</p></div>'
+                            );
+                        }
+                    } catch (e) {
+                        // Show parsing error
+                        $('#upload-response').html(
+                            '<div class="notice notice-error"><p>' + 
+                            rj_tracking_vars.upload_error + 
+                            '</p></div>'
+                        );
+                    }
+                } else {
+                    // Show HTTP error
+                    $('#upload-response').html(
+                        '<div class="notice notice-error"><p>' + 
+                        rj_tracking_vars.upload_error + ' (' + xhr.status + ')' + 
+                        '</p></div>'
+                    );
+                }
+            });
+            
+            // Handle errors
+            xhr.addEventListener('error', function() {
+                $('#upload-response').html(
+                    '<div class="notice notice-error"><p>' + 
+                    rj_tracking_vars.upload_error + 
+                    '</p></div>'
+                );
+            });
+            
+            // Handle abortion
+            xhr.addEventListener('abort', function() {
+                $('#upload-response').html(
+                    '<div class="notice notice-error"><p>' + 
+                    'Upload was aborted.' + 
+                    '</p></div>'
+                );
+            });
+            
+            // Send the data
+            xhr.open('POST', rj_tracking_vars.ajax_url, true);
+            xhr.send(formData);
+            
+            // Simulate processing progress after upload completes (just for visual feedback)
+            var processingTimer;
+            var processingProgress = 0;
+            
+            function simulateProcessing() {
+                processingProgress += 5;
+                if (processingProgress <= 90) { // Only go up to 90%, the server will set 100% when done
+                    $('#progress-bar').css('width', processingProgress + '%');
+                    $('#progress-percentage').text(processingProgress + '%');
+                    processingTimer = setTimeout(simulateProcessing, 500);
+                }
+            }
+            
+            // Start processing simulation after 1 second (assuming upload is quick)
+            setTimeout(function() {
+                simulateProcessing();
+            }, 1000);
+            
+            // Stop simulation when we get a response
+            xhr.addEventListener('load', function() {
+                clearTimeout(processingTimer);
             });
         });
     }

@@ -85,7 +85,8 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
                 'nonce' => wp_create_nonce('rj_indiapost_tracking_csv_nonce'),
                 'uploading_text' => __('Uploading...', 'rj-woo-indiapost-tracking'),
                 'upload_success' => __('CSV uploaded successfully!', 'rj-woo-indiapost-tracking'),
-                'upload_error' => __('Error uploading CSV. Please try again.', 'rj-woo-indiapost-tracking')
+                'upload_error' => __('Error uploading CSV. Please try again.', 'rj-woo-indiapost-tracking'),
+                'processing_text' => __('Processing:', 'rj-woo-indiapost-tracking')
             )
         );
     }
@@ -132,6 +133,15 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
                         </div>
                     </form>
                     <div id="upload-response" class="upload-response"></div>
+                    
+                    <!-- Progress Bar Container -->
+                    <div id="upload-progress-container" style="display:none; margin-top: 20px;">
+                        <p id="progress-status"><?php _e('Processing...', 'rj-woo-indiapost-tracking'); ?></p>
+                        <div class="progress-bar-wrapper">
+                            <div id="progress-bar" style="width: 0%; height: 20px; background-color: #0073aa; border-radius: 3px; transition: width 0.3s;"></div>
+                        </div>
+                        <p id="progress-percentage">0%</p>
+                    </div>
                 </div>
             </div>
             
@@ -345,6 +355,9 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
         // Begin transaction
         $wpdb->query('START TRANSACTION');
         
+        // Set timezone to IST for log timestamps
+        date_default_timezone_set('Asia/Kolkata');
+        
         // Start logging
         $log_file = 'tracking_upload_' . date('Y-m-d_H-i-s') . '.log';
         $log_path = $this->get_logs_directory() . $log_file;
@@ -352,7 +365,7 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
         $log_content = "==========================================================\n";
         $log_content .= "India Post Tracking CSV Upload Log\n";
         $log_content .= "==========================================================\n";
-        $log_content .= "Date: " . date_i18n(get_option('date_format') . ' ' . get_option('time_format')) . "\n";
+        $log_content .= "Date: " . date('F j, Y g:i a') . " IST\n";
         $log_content .= "File: " . $file_name . "\n";
         $log_content .= "User: " . wp_get_current_user()->display_name . " (ID: $user_id)\n";
         $log_content .= "==========================================================\n\n";

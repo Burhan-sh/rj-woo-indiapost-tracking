@@ -8,18 +8,16 @@
     border: 1px solid #ccd0d4;
     box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
     margin-bottom: 20px;
-    padding: 15px;
+    padding: 20px;
 }
 
 .tracking-upload-container h2 {
     margin-top: 0;
-    padding-bottom: 10px;
-    border-bottom: 1px solid #eee;
 }
 
 /* Form Styling */
 .tracking-upload-form {
-    margin-top: 10px;
+    margin-top: 15px;
 }
 
 .form-group {
@@ -28,8 +26,8 @@
 
 .form-group label {
     display: block;
-    margin-bottom: 5px;
     font-weight: 600;
+    margin-bottom: 5px;
 }
 
 #tracking-csv-file {
@@ -44,26 +42,60 @@
     margin-top: 15px;
 }
 
-/* Response Message Styling */
-.upload-response {
-    margin-top: 15px;
-    padding: 10px;
+/* Progress bar styles */
+#upload-progress-container {
+    margin: 20px 0;
+    width: 100%;
+}
+
+.progress-bar-wrapper {
+    background-color: #f1f1f1;
     border-radius: 3px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) inset;
+    height: 20px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
 }
 
-.upload-success {
-    background-color: #d4edda;
-    color: #155724;
-    border: 1px solid #c3e6cb;
+#progress-bar {
+    background-color: #0073aa;
+    height: 100%;
+    left: 0;
+    position: absolute;
+    top: 0;
+    transition: width 0.3s ease;
 }
 
-.upload-error {
-    background-color: #f8d7da;
-    color: #721c24;
-    border: 1px solid #f5c6cb;
+#progress-percentage {
+    font-weight: bold;
+    margin-top: 5px;
+    text-align: center;
 }
 
-/* List Table Styling */
+#progress-status {
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+/* Response messages */
+.notice {
+    background: #fff;
+    border-left: 4px solid #72aee6;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    margin: 10px 0;
+    padding: 12px;
+}
+
+.notice-success {
+    border-left-color: #46b450;
+}
+
+.notice-error {
+    border-left-color: #dc3232;
+}
+
+/* Tracking list styles */
 .tracking-list-container {
     margin-top: 20px;
 }
@@ -128,29 +160,30 @@
 }
 
 /* Log File Viewer */
-.log-file-header {
-    margin-bottom: 20px;
+.log-file-viewer {
+    background: #fff;
+    border: 1px solid #ccd0d4;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+    margin-top: 20px;
+    padding: 20px;
 }
 
-.log-file-header h3 {
-    margin-top: 15px;
-    margin-bottom: 5px;
+.log-file-header {
+    margin-bottom: 15px;
 }
 
 .log-file-content {
-    background: #f9f9f9;
+    background: #f5f5f5;
     border: 1px solid #ddd;
-    padding: 15px;
-    max-height: 600px;
-    overflow-y: auto;
+    max-height: 500px;
+    overflow: auto;
+    padding: 10px;
 }
 
 .log-file-content pre {
     margin: 0;
     white-space: pre-wrap;
-    font-family: Consolas, Monaco, monospace;
-    font-size: 13px;
-    line-height: 1.5;
+    word-wrap: break-word;
 }
 
 /* Processing Overlay */
