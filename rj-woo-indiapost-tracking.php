@@ -377,3 +377,6 @@ require_once plugin_dir_path(__FILE__) . 'wp-orders-listing.php';
 
 // Include CSV upload functionality with logs
 require_once plugin_dir_path(__FILE__) . 'tracking-csv-upload-with-logs.php';
+
+// Include automatic tracking assignment functionality
+require_once plugin_dir_path(__FILE__) . 'auto-tracking-assignment.php';
