@@ -52,22 +52,38 @@ class RJ_IndiaPost_Auto_Tracking_Assignment {
      * @param WC_Order $order Order object
      */
     public function maybe_assign_tracking($order_id, $from_status, $to_status, $order) {
-        // Only assign tracking when order status is 'processing'
-        if ($to_status == 'processing') {
+        // Add safety checks
+        if (empty($order_id) || empty($to_status)) {
+            return;
+        }
+        
+        // Only assign tracking when order status is 'process-to-ship'
+        if ($to_status === 'process-to-ship') {
             $this->assign_tracking_to_order($order_id);
         }
     }
     
     /**
-     * Check if tracking should be assigned on new order with processing status
+     * Check if tracking should be assigned on new order with process-to-ship status
      *
      * @param int $order_id Order ID
      */
     public function maybe_assign_tracking_new_order($order_id) {
+        if (empty($order_id)) {
+            return;
+        }
+        
         $order = $this->get_order($order_id);
         
-        // Only assign tracking when order status is 'processing'
-        if ($order && $this->get_order_status($order) == 'processing') {
+        // Only proceed if we have a valid order
+        if (!$order) {
+            return;
+        }
+        
+        $status = $this->get_order_status($order);
+        
+        // Only assign tracking when order status is 'process-to-ship'
+        if (!empty($status) && $status === 'process-to-ship') {
             $this->assign_tracking_to_order($order_id);
         }
     }
@@ -109,14 +125,22 @@ class RJ_IndiaPost_Auto_Tracking_Assignment {
      * @return string Order status
      */
     private function get_order_status($order) {
+        // Safety check for null/false order
+        if (!$order) {
+            return '';
+        }
+        
         if (method_exists($order, 'get_status')) {
-            return $order->get_status();
+            $status = $order->get_status();
+            return !empty($status) ? $status : '';
         }
         
         // Fallback for traditional post meta
-        $terms = get_the_terms($order->ID, 'shop_order_status');
-        if ($terms && !is_wp_error($terms)) {
-            return $terms[0]->slug;
+        if (property_exists($order, 'ID')) {
+            $terms = get_the_terms($order->ID, 'shop_order_status');
+            if ($terms && !is_wp_error($terms) && !empty($terms) && isset($terms[0]->slug)) {
+                return $terms[0]->slug;
+            }
         }
         
         return '';
@@ -527,6 +551,11 @@ class RJ_IndiaPost_Auto_Tracking_Assignment {
      * @param WC_Order $order Order object
      */
     public function update_tracking_status($order_id, $from_status, $to_status, $order) {
+        // Add safety checks
+        if (empty($order_id) || empty($to_status)) {
+            return;
+        }
+
         // Get tracking number from order
         $tracking_number = $this->get_order_meta($order_id, '_rj_indiapost_tracking_number');
         
@@ -537,12 +566,16 @@ class RJ_IndiaPost_Auto_Tracking_Assignment {
         
         // Determine tracking type from tracking number prefix
         $tracking_type = '';
-        if (strpos($tracking_number, 'EG') === 0) {
-            $tracking_type = 'EG';
-        } elseif (strpos($tracking_number, 'CG') === 0) {
-            $tracking_type = 'CG';
-        } else {
-            // Unknown tracking type
+        if (is_string($tracking_number)) {
+            if (strpos($tracking_number, 'EG') === 0) {
+                $tracking_type = 'EG';
+            } elseif (strpos($tracking_number, 'CG') === 0) {
+                $tracking_type = 'CG';
+            }
+        }
+        
+        // If tracking type could not be determined, exit
+        if (empty($tracking_type)) {
             return;
         }
         
