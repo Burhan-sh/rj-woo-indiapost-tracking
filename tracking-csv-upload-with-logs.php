@@ -69,7 +69,7 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
             'rj-indiapost-tracking-csv',
             plugin_dir_url(__FILE__) . 'css/tracking-csv.css',
             array(),
-            '1.0.0'
+            '1.0.3'
         );
         
         // Enqueue JS
@@ -119,6 +119,26 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
     }
     
     /**
+     * Get count of available tracking numbers
+     * 
+     * @return array Counts of available EG and CG tracking numbers
+     */
+    private function get_available_tracking_counts() {
+        global $wpdb;
+        
+        $eg_table_name = $wpdb->prefix . 'EG_india_post_tracking';
+        $cg_table_name = $wpdb->prefix . 'CG_india_post_tracking';
+        
+        $eg_count = $wpdb->get_var("SELECT COUNT(*) FROM {$eg_table_name} WHERE order_id IS NULL OR order_id = ''");
+        $cg_count = $wpdb->get_var("SELECT COUNT(*) FROM {$cg_table_name} WHERE order_id IS NULL OR order_id = ''");
+        
+        return array(
+            'eg_count' => (int)$eg_count,
+            'cg_count' => (int)$cg_count
+        );
+    }
+    
+    /**
      * Render the tracking page
      */
     public function render_tracking_page() {
@@ -126,6 +146,9 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
         if (!current_user_can('manage_options')) {
             return;
         }
+        
+        // Get available tracking counts
+        $available_counts = $this->get_available_tracking_counts();
         
         // Include the list tables class
         if (!class_exists('WP_List_Table')) {
@@ -147,6 +170,23 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
                 <div class="processing-spinner"></div>
                 <div class="processing-text"><?php _e('Processing CSV File...', 'rj-woo-indiapost-tracking'); ?></div>
                 <div class="processing-subtext"><?php _e('Please wait while we process your tracking numbers. This may take a moment depending on the file size.', 'rj-woo-indiapost-tracking'); ?></div>
+            </div>
+            
+            <!-- Available Tracking Numbers Summary -->
+            <div class="tracking-summary" style="margin: 20px 0; padding: 15px; background: #fff; border: 1px solid #ccd0d4; box-shadow: 0 1px 1px rgba(0,0,0,.04);">
+                <h3 style="margin-top: 0;"><?php _e('Available Tracking Numbers', 'rj-woo-indiapost-tracking'); ?></h3>
+                <div class="tracking-counts" style="display: flex; gap: 20px;">
+                    <div class="eg-count" style="flex: 1; padding: 15px; background: #f8f9fa; border-radius: 4px;">
+                        <h4 style="margin: 0; color: #1e88e5;"><?php _e('EG Tracking Numbers', 'rj-woo-indiapost-tracking'); ?></h4>
+                        <p style="font-size: 24px; margin: 10px 0; color: #2196f3;"><?php echo number_format($available_counts['eg_count']); ?></p>
+                        <span style="color: #666;"><?php _e('available for assignment', 'rj-woo-indiapost-tracking'); ?></span>
+                    </div>
+                    <div class="cg-count" style="flex: 1; padding: 15px; background: #f8f9fa; border-radius: 4px;">
+                        <h4 style="margin: 0; color: #43a047;"><?php _e('CG Tracking Numbers', 'rj-woo-indiapost-tracking'); ?></h4>
+                        <p style="font-size: 24px; margin: 10px 0; color: #4caf50;"><?php echo number_format($available_counts['cg_count']); ?></p>
+                        <span style="color: #666;"><?php _e('available for assignment', 'rj-woo-indiapost-tracking'); ?></span>
+                    </div>
+                </div>
             </div>
             
             <!-- Upload Form -->
