@@ -29,6 +29,10 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
         // Add AJAX handler for CSV upload
         add_action('wp_ajax_rj_indiapost_upload_csv', array($this, 'handle_csv_upload'));
         
+        // New actions for GST reports
+        add_action('wp_ajax_rj_generate_gst_report', array($this, 'handle_gst_report_generation'));
+        add_action('wp_ajax_rj_download_gst_report', array($this, 'handle_gst_report_download'));
+        
         // Initialize tables on plugin activation
         register_activation_hook(__FILE__, array($this, 'create_tracking_tables'));
         
@@ -77,6 +81,15 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
             true
         );
         
+        // Add new script for GST reports functionality
+        wp_enqueue_script(
+            'rj-indiapost-gst-reports-js',
+            plugin_dir_url(__FILE__) . 'js/gst-reports.js',
+            array('jquery'),
+            '1.0.0',
+            true
+        );
+        
         // Localize script with necessary data
         wp_localize_script(
             'rj-indiapost-tracking-csv-js',
@@ -89,6 +102,18 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
                 'upload_error' => __('Error uploading CSV. Please try again.', 'rj-woo-indiapost-tracking'),
                 'processing_text' => __('Processing CSV File...', 'rj-woo-indiapost-tracking'),
                 'processing_subtext' => __('Please wait while we process your tracking numbers.', 'rj-woo-indiapost-tracking')
+            )
+        );
+        
+        // Localize script for GST reports
+        wp_localize_script(
+            'rj-indiapost-gst-reports-js',
+            'rj_gst_vars',
+            array(
+                'ajax_url' => admin_url('admin-ajax.php'),
+                'nonce' => wp_create_nonce('rj_indiapost_gst_nonce'),
+                'processing_text' => __('Generating GST Report...', 'rj-woo-indiapost-tracking'),
+                'processing_subtext' => __('Please wait while we process your data.', 'rj-woo-indiapost-tracking')
             )
         );
     }
@@ -156,6 +181,9 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
                 <a href="?page=indiapost-trackings&tab=logs" class="nav-tab <?php echo $active_tab == 'logs' ? 'nav-tab-active' : ''; ?>">
                     <?php _e('Upload Logs', 'rj-woo-indiapost-tracking'); ?>
                 </a>
+                <a href="?page=indiapost-trackings&tab=gst" class="nav-tab <?php echo $active_tab == 'gst' ? 'nav-tab-active' : ''; ?>">
+                    <?php _e('GST Reports', 'rj-woo-indiapost-tracking'); ?>
+                </a>
             </h2>
             
             <!-- Display the appropriate content based on tab -->
@@ -171,6 +199,8 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
                     $cg_list_table->display();
                 } elseif ($active_tab == 'logs') {
                     $this->display_logs_tab();
+                } elseif ($active_tab == 'gst') {
+                    $this->display_gst_reports_tab();
                 }
                 ?>
             </div>
@@ -629,6 +659,296 @@ class RJ_IndiaPost_Tracking_CSV_Upload {
         if (!file_exists($logs_dir . '.htaccess')) {
             file_put_contents($logs_dir . '.htaccess', 'deny from all');
         }
+    }
+    
+    /**
+     * Display the GST reports tab content
+     */
+    private function display_gst_reports_tab() {
+        ?>
+        <div class="gst-reports-container">
+            <div class="gst-upload-section">
+                <h3><?php _e('Upload Tracking Numbers for GST Report', 'rj-woo-indiapost-tracking'); ?></h3>
+                <form id="gst-tracking-upload-form" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label for="gst-tracking-file"><?php _e('Choose Excel/CSV file (with Article Number column):', 'rj-woo-indiapost-tracking'); ?></label>
+                        <input type="file" name="gst_tracking_file" id="gst-tracking-file" accept=".csv,.xlsx,.xls" required>
+                    </div>
+                    
+                    <div class="form-actions">
+                        <?php wp_nonce_field('rj_indiapost_gst_upload', 'gst_upload_nonce'); ?>
+                        <button type="submit" id="upload-gst-btn" class="button button-primary">
+                            <?php _e('Generate GST Report', 'rj-woo-indiapost-tracking'); ?>
+                        </button>
+                    </div>
+                </form>
+                <div id="gst-upload-response" class="upload-response"></div>
+            </div>
+            
+            <div class="gst-download-section" style="display: none;">
+                <h3><?php _e('Download GST Report', 'rj-woo-indiapost-tracking'); ?></h3>
+                <button id="download-gst-report" class="button button-primary">
+                    <?php _e('Download Report', 'rj-woo-indiapost-tracking'); ?>
+                </button>
+            </div>
+        </div>
+        <?php
+    }
+    
+    /**
+     * Handle GST report generation
+     */
+    public function handle_gst_report_generation() {
+        // Check nonce for security
+        check_ajax_referer('rj_indiapost_gst_nonce', 'security');
+        
+        // Check user permissions
+        if (!current_user_can('manage_options')) {
+            wp_send_json_error(array('message' => __('You do not have permission to generate reports.', 'rj-woo-indiapost-tracking')));
+            return;
+        }
+        
+        // Check if file is uploaded
+        if (empty($_FILES['gst_tracking_file'])) {
+            wp_send_json_error(array('message' => __('No file was uploaded.', 'rj-woo-indiapost-tracking')));
+            return;
+        }
+        
+        $file = $_FILES['gst_tracking_file'];
+        
+        // Check for upload errors
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            wp_send_json_error(array('message' => __('Error uploading file.', 'rj-woo-indiapost-tracking')));
+            return;
+        }
+        
+        // Process the file and generate report
+        $result = $this->generate_gst_report($file['tmp_name']);
+        
+        if (is_wp_error($result)) {
+            wp_send_json_error(array('message' => $result->get_error_message()));
+            return;
+        }
+        
+        wp_send_json_success(array(
+            'message' => __('GST report generated successfully!', 'rj-woo-indiapost-tracking'),
+            'report_id' => $result['report_id']
+        ));
+    }
+    
+    /**
+     * Generate GST report from uploaded file
+     *
+     * @param string $file_path Path to the uploaded file
+     * @return array|WP_Error Result of the processing
+     */
+    private function generate_gst_report($file_path) {
+        global $wpdb;
+        
+        // Create temporary directory for reports if it doesn't exist
+        $upload_dir = wp_upload_dir();
+        $reports_dir = $upload_dir['basedir'] . '/indiapost-gst-reports/';
+        if (!file_exists($reports_dir)) {
+            wp_mkdir_p($reports_dir);
+        }
+        
+        // Generate unique report ID
+        $report_id = uniqid('gst_report_');
+        $report_file = $reports_dir . $report_id . '.csv';
+        
+        // Open input file
+        $input = fopen($file_path, 'r');
+        if (!$input) {
+            return new WP_Error('file_error', __('Could not open input file.', 'rj-woo-indiapost-tracking'));
+        }
+        
+        // Create output file
+        $output = fopen($report_file, 'w');
+        if (!$output) {
+            fclose($input);
+            return new WP_Error('file_error', __('Could not create output file.', 'rj-woo-indiapost-tracking'));
+        }
+        
+        try {
+            // Write headers
+            $headers = array(
+                'Month',
+                'Order date',
+                'Order Number',
+                'Tracking Number',
+                'Order Status',
+                'State',
+                'Pin',
+                'GST number',
+                'HSNcode',
+                'CGST rate',
+                'SGST rate',
+                'CGST amount',
+                'SGST amount',
+                'Total amount'
+            );
+            fputcsv($output, $headers);
+            
+            // Skip header row in input file
+            $header = fgetcsv($input);
+            if (!$header) {
+                throw new Exception(__('Empty input file.', 'rj-woo-indiapost-tracking'));
+            }
+            
+            // Find Article Number column index
+            $article_col = array_search('Article Number', $header);
+            if ($article_col === false) {
+                throw new Exception(__('Article Number column not found in input file.', 'rj-woo-indiapost-tracking'));
+            }
+            
+            // Process each tracking number
+            while (($data = fgetcsv($input)) !== false) {
+                if (empty($data[$article_col])) continue;
+                
+                $tracking_number = sanitize_text_field(trim($data[$article_col]));
+                
+                // Find order ID from tracking number
+                $order_id = $wpdb->get_var($wpdb->prepare(
+                    "SELECT post_id FROM {$wpdb->postmeta} 
+                    WHERE meta_key = '_rj_indiapost_tracking_number' 
+                    AND meta_value = %s",
+                    $tracking_number
+                ));
+                
+                if (!$order_id) continue;
+                
+                // Get order details
+                $order = wc_get_order($order_id);
+                if (!$order) continue;
+                
+                // Get order data
+                $order_data = $order->get_data();
+                $state_code = $order_data['shipping']['state'];
+                
+                // Get full state name using WooCommerce function
+                $states = WC()->countries->get_states('IN');
+                $shipping_state = isset($states[$state_code]) ? $states[$state_code] : $state_code;
+                $shipping_postcode = $order_data['shipping']['postcode'];
+                
+                // Get HSN codes and GST rates
+                $hsn_codes = array();
+                $gst_rates = array();
+                $total_tax = 0;
+                
+                foreach ($order->get_items() as $item) {
+                    $product_id = $item->get_product_id();
+                    
+                    // Get HSN code from WooCommerce product
+                    $hsn = get_post_meta($product_id, '_hsn_code', true);
+                    if ($hsn) {
+                        $hsn_codes[] = $hsn;
+                    }
+                    
+                    // Get GST rate from ACF field
+                    $gst_rate = get_field('gst_rate_in_persentage', $product_id);
+                    if ($gst_rate) {
+                        $gst_rates[] = floatval($gst_rate);
+                        
+                        // Calculate tax amount for this item
+                        $item_total = $item->get_total();
+                        $tax_rate = $gst_rate / 100;
+                        $total_tax += $item_total * $tax_rate;
+                    }
+                }
+                
+                // Prepare row data
+                $row = array(
+                    date('Y-m-d'), // Month (today's date)
+                    $order->get_date_created()->date('Y-m-d'), // Order date
+                    $order_id, // Order number
+                    $tracking_number, // Tracking number
+                    $order->get_status() === 'completed' ? 'completed' : '', // Order status
+                    $shipping_state, // State
+                    $shipping_postcode, // PIN
+                    '', // GST number (empty as requested)
+                    implode(',', array_unique($hsn_codes)), // HSN codes
+                    '', // CGST rate (empty if multiple products)
+                    '', // SGST rate (empty if multiple products)
+                    '', // CGST amount
+                    '', // SGST amount
+                    $order->get_total() // Total amount
+                );
+                
+                // If we have exactly one GST rate, calculate CGST and SGST
+                if (count(array_unique($gst_rates)) === 1) {
+                    $gst_rate = $gst_rates[0];
+                    $cgst_rate = $sgst_rate = $gst_rate / 2;
+                    
+                    $row[9] = number_format($cgst_rate, 2); // CGST rate
+                    $row[10] = number_format($sgst_rate, 2); // SGST rate
+                    
+                    // Calculate tax amounts
+                    $cgst_amount = $total_tax / 2;
+                    $row[11] = number_format($cgst_amount, 2); // CGST amount
+                    $row[12] = number_format($cgst_amount, 2); // SGST amount
+                }
+                
+                fputcsv($output, $row);
+            }
+            
+            fclose($input);
+            fclose($output);
+            
+            return array(
+                'report_id' => $report_id,
+                'file_path' => $report_file
+            );
+            
+        } catch (Exception $e) {
+            if (is_resource($input)) fclose($input);
+            if (is_resource($output)) fclose($output);
+            if (file_exists($report_file)) unlink($report_file);
+            
+            return new WP_Error('processing_error', $e->getMessage());
+        }
+    }
+    
+    /**
+     * Handle GST report download
+     */
+    public function handle_gst_report_download() {
+        // Check nonce
+        check_ajax_referer('rj_indiapost_gst_nonce', 'security');
+        
+        // Check user permissions
+        if (!current_user_can('manage_options')) {
+            wp_die(__('You do not have permission to download reports.', 'rj-woo-indiapost-tracking'));
+        }
+        
+        // Get report ID
+        $report_id = isset($_POST['report_id']) ? sanitize_text_field($_POST['report_id']) : '';
+        if (empty($report_id)) {
+            wp_die(__('Invalid report ID.', 'rj-woo-indiapost-tracking'));
+        }
+        
+        // Get report file path
+        $upload_dir = wp_upload_dir();
+        $report_file = $upload_dir['basedir'] . '/indiapost-gst-reports/' . $report_id . '.csv';
+        
+        // Check if file exists
+        if (!file_exists($report_file)) {
+            wp_die(__('Report file not found.', 'rj-woo-indiapost-tracking'));
+        }
+        
+        // Set headers for file download
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="gst_report_' . date('Y-m-d') . '.csv"');
+        header('Cache-Control: no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        
+        // Output file contents
+        readfile($report_file);
+        
+        // Delete the file after download
+        unlink($report_file);
+        
+        exit;
     }
     
     /**
